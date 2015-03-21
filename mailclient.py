@@ -11,11 +11,11 @@ class MailClient:
         self.gmail_pw = "password"
 
         # Gmail server
-        self.gmail_smtp_addr = "smtp.sample.com"
+        self.gmail_smtp_addr = "smtp.gmail.com"
         self.gmail_smtp_port = 587
 
         # header
-        self.from_addr = "from_address@sample.com"
+        self.from_addr = self.gmail_addr
         self.to_addr = "to_address@sample.com"
 
     def send(self, date, channel, text):
