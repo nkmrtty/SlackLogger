@@ -5,10 +5,10 @@ from email.Header import Header
 
 
 class MailClient:
-    def __init__(self):
+    def __init__(self, addr, passwd):
         # Gmail account
-        self.gmail_addr = "address@sample.com"
-        self.gmail_pw = "password"
+        self.gmail_addr = addr
+        self.gmail_pw = passwd
 
         # Gmail server
         self.gmail_smtp_addr = "smtp.gmail.com"
@@ -16,12 +16,9 @@ class MailClient:
 
         # header
         self.from_addr = self.gmail_addr
-        self.to_addr = "to_address@sample.com"
+        self.to_addr = self.gmail_addr
 
-    def send(self, date, channel, text):
-        subject = u"[SlackLogger] {} #{}".format(date, channel)
-        body = text
-
+    def send(self, subject, body):
         # generate message
         msg = MIMEText(body.encode("utf-8"), "plain", "utf-8")
         msg["From"] = self.from_addr
