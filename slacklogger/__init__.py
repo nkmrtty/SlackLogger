@@ -19,10 +19,16 @@ def read_config(fpath):
     config = ConfigParser.ConfigParser()
     if config.read(fpath):
         token = config.get('logger', 'token')
+        tgt_chnames = config.get('logger', 'tgt_chnames') or []
+        if tgt_chnames:
+            tgt_chnames = tgt_chnames.split(' ')
+        ign_chnames = config.get('logger', 'ign_chnames') or []
+        if ign_chnames:
+            ign_chnames = ign_chnames.split(' ')
         ntf_chname = config.get('logger', 'ntf_chname')
         addr = config.get('logger', 'addr')
         passwd = config.get('logger', 'passwd')
-        return token, ntf_chname, addr, passwd
+        return token, tgt_chnames, ign_chnames, ntf_chname, addr, passwd
     else:
         configure(fpath)
         return read_config(fpath)
@@ -30,6 +36,11 @@ def read_config(fpath):
 
 def configure(fpath):
     token = raw_input('[API token] > ').decode('utf-8')
+    tgt_chnames = raw_input('[Target channel names] > ').decode('utf-8')
+    if not tgt_chnames:
+        ign_chnames = raw_input('[Ignore channel names] > ').decode('utf-8')
+    else:
+        ign_chnames = u''
     ntf_chname = raw_input(
         '[Channel name for notification] > ').decode('utf-8')
     addr = raw_input('[Gmail address] > ')
@@ -38,6 +49,8 @@ def configure(fpath):
     config = ConfigParser.RawConfigParser()
     config.add_section('logger')
     config.set('logger', 'token', token)
+    config.set('logger', 'tgt_chnames', tgt_chnames)
+    config.set('logger', 'ign_chnames', ign_chnames)
     config.set('logger', 'ntf_chname', ntf_chname)
     config.set('logger', 'addr', addr)
     config.set('logger', 'passwd', passwd)
@@ -54,14 +67,16 @@ class SlackLogger(object):
 
     def __init__(self, config_fpath=None):
         config_fpath = config_fpath or './config.ini'
-        TOKEN, NTF_CHNAME, ADDR, PASSWD = read_config(config_fpath)
+        (TOKEN, TGT_CHNAMES, IGN_CHNAMES,
+            NTF_CHNAME, ADDR, PASSWD) = read_config(config_fpath)
 
         self.slack = SlackClient(TOKEN)
         self.mail = MailClient(ADDR, PASSWD)
 
         # prefetch
         self.members = self.fetch_members()
-        self.channels, self.ntf_chid = self.fetch_channels(NTF_CHNAME)
+        self.channels, self.ntf_chid = self.fetch_channels(
+            TGT_CHNAMES, IGN_CHNAMES, NTF_CHNAME)
 
     def fetch_members(self):
         response = self.slack.api_call('users.list')
@@ -70,12 +85,25 @@ class SlackLogger(object):
             members[m['id']] = m['name']
         return members
 
-    def fetch_channels(self, ntf_chname):
+    def fetch_channels(self, tgt_chnames, ign_chnames, ntf_chname):
+        def check_chname(chname):
+            if len(tgt_chnames) > 0:
+                if chname in tgt_chnames:
+                    return True
+                return False
+            elif len(ign_chnames) > 0:
+                if chname in ign_chnames:
+                    return False
+            return True
+
         response = self.slack.api_call('channels.list')
         channels = {}
         ntf_chid = None
         for c in response['channels']:
-            channels[c['id']] = c['name']
+            if c['is_archived']:
+                continue
+            if check_chname(c['name']):
+                channels[c['id']] = c['name']
             if c['name'] == ntf_chname:
                 ntf_chid = c['id']
         return channels, ntf_chid

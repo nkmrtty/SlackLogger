@@ -13,7 +13,7 @@ def requirements(fname):
 
 setup(
     name='slacklogger',
-    version='0.2.1',
+    version='0.3.0',
     author='Tatsuya NAKAMURA',
     author_email='nkmrtty.com@gmail.com',
     description='A tool for logging messages on your Slack term.',
