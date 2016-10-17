@@ -1,3 +1,6 @@
 *.ini
 *.ipynb*
 *.pyc
+build
+dist
+*.egg*
