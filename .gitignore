@@ -1,1 +1,6 @@
-config.ini
+*.ini
+*.ipynb*
+*.pyc
+build
+dist
+*.egg*
