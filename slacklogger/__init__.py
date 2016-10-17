@@ -2,12 +2,17 @@
 import re
 import time
 import ConfigParser
+from datetime import datetime, date, timedelta
 from slackclient import SlackClient
 
 import smtplib
 from email.MIMEText import MIMEText
 from email.Utils import formatdate
 from email.Header import Header
+
+
+def parse_date(date_str):
+    return datetime.strptime(date_str, '%Y%m%d')
 
 
 def read_config(fpath):
@@ -107,6 +112,57 @@ class SlackLogger(object):
                 channel, oldest, next_latest))
 
         return history
+
+    def send_mail(self, channel, cur_date, history):
+        subject = u"[SlackLogger] {:%Y/%m/%d} #{}".format(
+            cur_date, channel)
+
+        # parse history
+        prev_user = None
+        body = u""
+        for ts, user, text in history:
+            if not prev_user == user:
+                body += u"\n{}\n".format(user)
+                prev_user = user
+            body += u"{}: {}\n".format(ts, text)
+
+        self.mail.send(subject, body)
+
+    def notify_to_slack(self, cur_date):
+        text = "Logging on {:%Y/%m/%d} has been completed.".format(cur_date)
+        botname = "SlackLogger"
+        self.slack.api_call(
+            "chat.postMessage", channel=self.ntf_chid,
+            text=text, username=botname)
+
+    def logging(self, start=None, end=None):
+        # date init
+        start_date = start or (date.today() - timedelta(days=1))
+        if type(start_date) is not date:
+            start_date = parse_date(start_date)
+
+        end_date = end or date.today()
+        if type(end_date) is not date:
+            end_date = parse_date(end_date)
+
+        cur_date = start_date
+        while cur_date < end_date:
+            oldest = time.mktime(cur_date.timetuple())
+            latest = time.mktime((cur_date + timedelta(days=1)).timetuple())
+            print '> Logging on {:%Y/%m/%d}'.format(cur_date)
+            for ch, ch_name in self.channels.iteritems():
+                print '>>', ch_name,
+                history = self.fetch_channel_history(ch, oldest, latest)
+                if history:
+                    self.send_mail(ch_name, cur_date, history)
+                    print 'done'
+                else:
+                    print 'skipped'
+                time.sleep(1)
+            if self.ntf_chid:
+                self.notify_to_slack(cur_date)
+            cur_date += timedelta(days=1)
+        print 'Finished!'
 
 
 class MailClient:
