@@ -1,4 +1,6 @@
 # coding: utf-8
+import re
+import time
 import ConfigParser
 from slackclient import SlackClient
 
@@ -40,6 +42,11 @@ def configure(fpath):
 
 
 class SlackLogger(object):
+    # regexps
+    mention_user = re.compile(ur"<@(?P<uid>[^@>|]+)(\|[^>\|]+)?>", re.U)
+    mention_channel = re.compile(ur"<!channel>", re.U)
+    mention_everyone = re.compile(ur"<!everyone>", re.U)
+
     def __init__(self, config_fpath=None):
         config_fpath = config_fpath or './config.ini'
         TOKEN, NTF_CHNAME, ADDR, PASSWD = read_config(config_fpath)
@@ -67,6 +74,39 @@ class SlackLogger(object):
             if c['name'] == ntf_chname:
                 ntf_chid = c['id']
         return channels, ntf_chid
+
+    def fetch_channel_history(self, channel, oldest, latest):
+        def repl_userid(obj):
+            uid = obj.group("uid")
+            uname = u"@{}".format(self.members[uid])
+            return uname
+
+        response = self.slack.api_call(
+            'channels.history', channel=channel, oldest=oldest,
+            latest=latest, inclusive=1, count=1000)
+
+        history = []
+        for msg in response['messages']:
+            ts = time.strftime(
+                "%H:%M", time.localtime(int(float(msg["ts"]))))
+            text = msg['text']
+            text = self.mention_user.sub(repl_userid, text)
+            text = self.mention_channel.sub('@channel', text)
+            text = self.mention_everyone.sub('@everyone', text)
+
+            if 'user' in msg:
+                user = self.members[msg['user']]
+            else:
+                user = 'SYSTEM'
+
+            history.append((ts, user, text))
+        if response['has_more']:
+            time.sleep(0.5)
+            next_latest = response['messages'][-1]['ts']
+            history.extend(self.fetch_channel_history(
+                channel, oldest, next_latest))
+
+        return history
 
 
 class MailClient:
