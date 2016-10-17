@@ -12,13 +12,13 @@ def requirements(fname):
             for line in open(os.path.join(os.path.dirname(__file__), fname))]
 
 setup(
-    name='slacklog',
+    name='slacklogger',
     version='0.2.0',
     author='Tatsuya NAKAMURA',
     author_email='nkmrtty.com@gmail.com',
     description='A tool for logging messages on your Slack term.',
     license='MIT',
-    url='https://github.com/nkmrtty/slacklog/',
+    url='https://github.com/nkmrtty/SlackLogger/',
     packages=find_packages(),
     keywords=['slack', 'logging', 'api'],
     install_requires=['slackclient']
