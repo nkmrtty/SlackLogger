@@ -22,10 +22,11 @@ def read_config(fpath):
 
 
 def configure(fpath):
-    token = raw_input('[API token] >').decode('utf-8')
-    ntf_chname = raw_input('[Channel name for notification] >').decode('utf-8')
-    addr = raw_input('[Gmail address] >')
-    passwd = raw_input('[Gmail passwd] >')
+    token = raw_input('[API token] > ').decode('utf-8')
+    ntf_chname = raw_input(
+        '[Channel name for notification] > ').decode('utf-8')
+    addr = raw_input('[Gmail address] > ')
+    passwd = raw_input('[Gmail passwd] > ')
 
     config = ConfigParser.RawConfigParser()
     config.add_section('logger')
