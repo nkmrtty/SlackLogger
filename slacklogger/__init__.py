@@ -12,7 +12,7 @@ from email.Header import Header
 
 
 def parse_date(date_str):
-    return datetime.strptime(date_str, '%Y%m%d')
+    return datetime.strptime(date_str, '%Y%m%d').date()
 
 
 def read_config(fpath):
