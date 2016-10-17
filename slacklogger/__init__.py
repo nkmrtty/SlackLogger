@@ -12,9 +12,9 @@ def read_config(fpath):
     config = ConfigParser.ConfigParser()
     if config.read(fpath):
         token = config.get('logger', 'token')
-        ntf_chname = config.get('logger', 'token')
-        addr = config.get('logger', 'token')
-        passwd = config.get('logger', 'token')
+        ntf_chname = config.get('logger', 'ntf_chname')
+        addr = config.get('logger', 'addr')
+        passwd = config.get('logger', 'passwd')
         return token, ntf_chname, addr, passwd
     else:
         configure(fpath)
@@ -46,6 +46,27 @@ class SlackLogger(object):
 
         self.slack = SlackClient(TOKEN)
         self.mail = MailClient(ADDR, PASSWD)
+
+        # prefetch
+        self.members = self.fetch_members()
+        self.channels, self.ntf_chid = self.fetch_channels(NTF_CHNAME)
+
+    def fetch_members(self):
+        response = self.slack.api_call('users.list')
+        members = {}
+        for m in response['members']:
+            members[m['id']] = m['name']
+        return members
+
+    def fetch_channels(self, ntf_chname):
+        response = self.slack.api_call('channels.list')
+        channels = {}
+        ntf_chid = None
+        for c in response['channels']:
+            channels[c['id']] = c['name']
+            if c['name'] == ntf_chname:
+                ntf_chid = c['id']
+        return channels, ntf_chid
 
 
 class MailClient:
