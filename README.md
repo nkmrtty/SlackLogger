@@ -20,6 +20,8 @@ $ python setup.py install
 >>> from slacklogger import SlackLogger
 >>> sl = SlackLogger()
 [API token] > `Put your API token`
+[Target channel names] > `Put channel names that you want to log (nullable)`
+[Ignore channel names] > `Put channel names that you do not want to log (nullable)`
 [Channel name for notification] > `Put a channel name that you want to nofity the complication (nullable).`
 [Gmail address] > `Put your Gmail address`
 [Gmail passwd] > `Put your Gmail password`
@@ -40,4 +42,9 @@ Finished
 >> general done
 >> random done
 Finished
+>>>
 ```
+
+## Milestones
+* Support messages in group
+* Support direct messages
